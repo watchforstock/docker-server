@@ -1,0 +1,13 @@
+db:
+    image: busybox
+    command: /bin/sleep 30
+    ports:
+     - "5432"
+web:
+    image: busybox
+    command: /bin/sleep 30
+    port:
+     - "80"
+    links:
+     - db
+    

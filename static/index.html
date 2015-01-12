@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="stackApp">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Docker Manager</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.8/angular.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/restangular/1.3.1/restangular.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <script src="/static/stack.js"></script>
+</head>
+
+<body ng-controller="StackController">
+
+    <div class="container">
+
+        <div class="starter-template">
+            <h1>Bootstrap starter template</h1>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">Start new stack</div>
+                <div class="panel-body">
+                    <form class="form-inline" ng-submit="createStack()">
+                        <div class="form-group">
+                            <label class="sr-only" for="name">Username</label>
+                            <input type="text" class="form-control" id="name" placeholder="Username" ng-model="username">
+                        </div>
+                        <div class="form-group">
+                            <label class="sr-only" for="stack">Stack</label>
+                            <select class="form-control" id="stack" ng-model="newstack">
+                                <option ng-repeat="stack in stacks" value="{{ stack.id }}">Stack: {{ stack.name }}</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-default">Create</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">Running stacks</div>
+
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Stack</th>
+                            <th>Versions</th>
+                            <th>Connections</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tr ng-repeat="stack in running">
+                        <td>{{ stack.username }}</td>
+                        <td>{{ stack.stack.name }}</td>
+                        <td>
+                            <ul>
+                                <li ng-repeat="(key, value) in stack.stack.versions">{{key}}:{{value}}</li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul>
+                                <li ng-repeat="port in stack.ports"><a href="http://server:{{port.port}}/">{{port.component}} ({{port.port}})</a>
+                                </li>
+                            </ul>
+                        </td>
+                        <td>
+                            <a ng-click="deleteStack()" class="btn btn-danger">Stop</a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
