@@ -3,11 +3,11 @@ angular.module('stackApp', ['restangular'])
       
       Restangular.setRequestSuffix('/');
  
-    Restangular.all('stacks').getList().then(function(data) {
-        $scope.stacks = data;
-    });
 
     $scope.refresh = function() {      
+        Restangular.all('stacks').getList().then(function(data) {
+            $scope.stacks = data;
+        });
         Restangular.all('running').getList().then(function(data) {
             $scope.running = data;
         });

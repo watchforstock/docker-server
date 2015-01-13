@@ -63,10 +63,6 @@ def get_running_stacks():
 
     return json.dumps(running_stacks.values()), 200, {'Content-Type': 'application/json'}
 
-@app.route('/stacks/<stack_id>/', methods=['GET'])
-def stack_details(stack_id):
-    pass
-
 @app.route('/stacks/', methods=['POST'])
 def create_stack():
     # request.get_json()
@@ -81,12 +77,16 @@ def create_stack():
 
     return "ok"
 
-@app.route('/stacks/<stack_id>/', methods=['DELETE'])
-def stop_stack(stack_id):
-    pass
+@app.route('/stacks/<identifier>/<stack_id>/', methods=['DELETE'])
+def stop_stack(identifier, stack_id):
+    d = DockerController()
+    d.stop_stack(identifier, stack_id)
+    return "ok"
 
 def populate_already_running():
-    pass
+    global running_stacks
+    d = DockerController()
+    running_stacks = d.get_running_containers(stacks)
 
 if __name__ == '__main__':
     populate_already_running()

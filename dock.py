@@ -2,16 +2,18 @@ from docker import Client
 import yaml
 import json
 import subprocess
+from collections import defaultdict
 
 class DockerController:
     
     def __init__(self):
         self.c = Client(base_url='unix://var/run/docker.sock', version='1.15')
 
-    def adjust_name(self, name, username, stackid):
-        return '%s-%s-%s' % (username, stackid, name)
+    def adjust_name(self, name, identifier, stackid):
+        ''' generate a container name '''
+        return '%s-%s-%s' % (identifier, stackid, name)
 
-    def check_image_exists(self, image,tag):
+    def check_image_exists(self, image, tag):
         images = self.c.images()
         target = '%s:%s' % (image, tag)
         for img in images:
@@ -22,20 +24,16 @@ class DockerController:
         # Need to get the image locally
         print 'Pulling image %s:%s' % (image, tag)
         subprocess.call(['docker', 'pull', '%s:%s' % (image, tag)])
-        #for line in self.c.pull(image, tag=tag, stream=True, insecure_registry=True):
-        #    pass
-#            print(json.dumps(json.loads(line), indent=4))
+        # This call isn't running for some reason
+        # self.c.pull(image, tag=tag, insecure_registry=True)
+
     def running_containers(self):
+        ''' Get all the IDs of all running containers '''
         return dict([[x['Id'], 0] for x in self.c.containers(quiet=True)])
         
-    def start_container(self, name, spec, tag, username, stackid):
-        image = spec['image'] + ':' + tag
-
-        self.check_image_exists(spec['image'], tag)
-
-        ports = spec.get('ports') or []
+    def get_links(self, spec
         links = []
-        print 'Sorting links'
+        
         if 'links' in spec:
             all_links = []
             for link in spec.get('links'):
@@ -43,38 +41,77 @@ class DockerController:
                     all_links.append(link.split(':'))
                 else:
                     all_links.append([link, link])
-            links = [[self.adjust_name(service, username, stackid),alias] for service,alias in all_links]
-        print links
-        command = spec.get('command')
-        name = self.adjust_name(name, username, stackid)
+            links = [[self.adjust_name(service, identifier, stackid),alias] for service,alias in all_links]
+        return links
 
+    def start_container(self, name, spec, tag, identifier, stackid):
+        image = spec['image'] + ':' + tag
+
+        # Pull the image if required
+        self.check_image_exists(spec['image'], tag)
+
+        ports = spec.get('ports') or []
+        links = self.get_links(spec)
+        command = spec.get('command')
+        name = self.adjust_name(name, identifier, stackid)
+
+        # Remove any existing container with the same name
         try:
             self.c.remove_container(name)
         except:
             pass
+        
         print 'Creating container with name %s' % name
         container = self.c.create_container(image=image, command=command, name=name, ports=ports)
+
+        # Determine port bindings to request
         port_bindings={}
         for port in ports:
             port_bindings[int(port)] = None
-        # Need to add links here
-        self.c.start(container=container.get('Id'), port_bindings=port_bindings,links=links)
+        
+        self.c.start(container=container.get('Id'), 
+                     port_bindings=port_bindings,
+                     links=links)
 
-        # Now determine port bindings
+        # Now determine where ports have ended up being mapped
         port_mappings = {}
         for port in ports:
             ext_port = self.c.port(container.get('Id'), port)
             port_mappings[port] = ext_port
+
         return container.get('Id'), image, port_mappings
 
-    def start_stack(self, username, stackid, stack_info):
-        config = yaml.load(open('config.yaml'))
-
-        stack = {'username': username, 'stack': stack_info, 'ports': [], 'machines':{}}
-
+    def get_running_containers(self, stack_config):
+        containers = self.c.containers()
+        
+        stacks = {}
+                  
+        for container in containers:
+            container_id = container['Id']
+            names = container['Names']
+            ports = container['Ports']
+                  
+            # Turn name into constituent parts
+            identifier, stackid, name = names[0][1:].split('-')      
+                
+            key = '%s-%s' % (stackid, identifier)
+                  
+            if key not in stacks:
+                stacks[key] = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}}
+            
+            stacks[key]['machines'][name] = container_id
+                  
+            # TODO: Need to iterate through ports
+                  
+        return stack
+            
+                  
+    def order_machines(self, config):
+        ''' Use links to determine order to instantiate containers '''
         all_machines = config.keys()
         to_build = []
 
+        last_length = len(all_machines)
         while len(all_machines)>0:
             unsatisfied = []
             for machine in all_machines:
@@ -83,33 +120,52 @@ class DockerController:
                     # can build now
                     to_build.append(machine)
                 elif all([link.split(':')[0] in to_build for link in links]):
-                    # all depemdemces satisfied
+                    # all dependencies satisfied
                     to_build.append(machine)
                 else:
                     unsatisfied.append(machine)
             all_machines = unsatisfied
+            
+            if len(all_machines)>0 && len(all_machines)==last_length:
+                # We're iterating without doing anything
+                raise Exception("Circular or unresolved dependency")
+        return to_build
+    
+    def start_stack(self, identifier, stackid, stack_info):
+        config = yaml.load(open('config.yaml'))
+
+        stack = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}}
+
+        to_build = self.order_machines(config)
 
         # Need to sort out ordering here
-        for name in to_build:
-            conf = config[name] 
-            contid, image, ports = self.start_container(name, conf, stack_info['versions'].get(name), username, stack_info['id'])
-        #    for port in ports:
+        for container_name in to_build:
+            
+            container_config = config[container_name] 
+            container_tag = stack_info['versions'].get(container_name)
+            
+            container_id, image, ports = self.start_container(container_name, 
+                                                              container_config, 
+                                                              container_tag, 
+                                                              identifier, 
+                                                              stack_info['id'])
+
             port_info = []
             for cont, other in ports.iteritems():
                 port_info.extend([(cont, x['HostPort']) for x in other])
-            stack['ports'].append({'component': name, 'port': port_info})
-            stack['machines'][name] = contid
+            stack['ports'].append({'component': container_name, 'port': port_info})
+            stack['machines'][container_name] = container_id
         return stack
 
-    def stop_stack(self, username, stackid):
+    def stop_stack(self, identifier, stackid):
         config = yaml.load(open('config.yaml'))
 
         stack_info = {
-		'id': 'test1'
+		  'id': 'test1'
         }
 
         for name, config in config.iteritems():
-            image_name = self.adjust_name(name, username, stack_info['id'])
+            image_name = self.adjust_name(name, identifier, stack_info['id'])
             try:
                 self.c.stop(image_name)
                 self.c.remove_container(image_name)
