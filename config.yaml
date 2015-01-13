@@ -1,13 +1,35 @@
 db:
-    image: busybox
-    command: /bin/sleep 30
+    image: postgres
     ports:
      - "5432"
-web:
-    image: busybox
-    command: /bin/sleep 30
-    port:
+asinit:
+    image: docker-registry:5000/adminserver
+    command: sh -c '/app/initdb.sh'
+    links:
+     - db:dbserver
+as:
+    image: docker-registry:5000/adminserver
+    ports:
      - "80"
     links:
+     - db:dbserver
+es:
+    image: docker-registry:5000/esserver
+    port:
+     - "9200"
+     - "9300"
+ds:
+    image: docker-registry:5000/docserver
+    links:
      - db
+     - es
+    ports:
+     - "8080"
+ws:
+    image: docker-registry:5000/webserver
+    links:
+     - ds
+     - as
+    ports:
+     - "80"
     

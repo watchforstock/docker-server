@@ -6,13 +6,17 @@ from dock import DockerController
 app = Flask(__name__)
 
 stacks = {
-    'test1':
+    'timsk395':
     {
-        'id': 'test1',
-        'name': 'test 1',
+        'id': 'timsk395',
+        'name': 'TIMSK 395 permissioning in web ui',
         'versions': {
-            'db': 'ubuntu-12.04',
-            'web': 'ubuntu-14.04'
+            'db': '9',
+            'ws': '117',
+            'es': '14',
+            'ds': '14',
+            'as': '25',
+            'asinit':'25'
         }
     },
     'test2':
@@ -25,26 +29,8 @@ stacks = {
         }
     },
 }
-running_stacks = [
-    {
-        'username': 'test1',
-        'stack': {
-            'id': 'test1',
-            'name': 'test 1',
-            'versions': {
-                'db': '14',
-                'ds': '16',
-                'we': '122'
-            }
-        },
-        'ports': [
-            {
-                'component': 'db',
-                'port': '5432'
-            }
-        ]
-    }
-]
+running_stacks = {
+}
 
 @app.route('/')
 def index():
@@ -56,7 +42,26 @@ def get_stacks():
 
 @app.route('/running/')
 def get_running_stacks():
-    return json.dumps(running_stacks), 200, {'Content-Type': 'application/json'}
+    global running_stacks
+    d = DockerController()
+    all_containers = d.running_containers()
+
+    still_going = {}
+
+    for name, stack in running_stacks.iteritems():
+        to_remove = []
+        for machine, contid in stack['machines'].iteritems():
+            if not contid in all_containers:
+                # Has gone
+                to_remove.append(machine)
+        for x in to_remove:
+            del stack['machines'][x]
+        if len(stack['machines'])>0:
+            # Something still going
+            still_going[name] = stack
+    running_stacks = still_going
+
+    return json.dumps(running_stacks.values()), 200, {'Content-Type': 'application/json'}
 
 @app.route('/stacks/<stack_id>/', methods=['GET'])
 def stack_details(stack_id):
@@ -70,7 +75,9 @@ def create_stack():
     data = request.get_json()
 
     d = DockerController()
-    d.start_stack(data['username'], data['stackid'], stacks[data['stackid']])
+    stack = d.start_stack(data['username'], data['stackid'], stacks[data['stackid']])
+
+    running_stacks[data['stackid'] + '-' + data['username']] = stack
 
     return "ok"
 

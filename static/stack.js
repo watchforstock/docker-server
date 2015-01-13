@@ -6,10 +6,14 @@ angular.module('stackApp', ['restangular'])
     Restangular.all('stacks').getList().then(function(data) {
         $scope.stacks = data;
     });
-      
-    Restangular.all('running').getList().then(function(data) {
-        $scope.running = data;
-    });
+
+    $scope.refresh = function() {      
+        Restangular.all('running').getList().then(function(data) {
+            $scope.running = data;
+        });
+    }
+
+    $scope.refresh();
     
       
     $scope.createStack = function() {
@@ -25,6 +29,7 @@ angular.module('stackApp', ['restangular'])
         Restangular.all('stacks').post(data).then(function() {
             // Success
             console.log("Success");
+            $scope.refresh();
         }, function() {
             // Failed
             console.log("Failed");

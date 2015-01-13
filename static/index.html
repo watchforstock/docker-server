@@ -41,7 +41,7 @@
             </div>
 
             <div class="panel panel-default">
-                <div class="panel-heading">Running stacks</div>
+                <div class="panel-heading">Running stacks <a ng-click="refresh()">refresh</a></div>
 
                 <table class="table table-striped">
                     <thead>
@@ -63,7 +63,7 @@
                         </td>
                         <td>
                             <ul>
-                                <li ng-repeat="port in stack.ports"><a href="http://server:{{port.port}}/">{{port.component}} ({{port.port}})</a>
+                                <li ng-repeat="port in stack.ports" ng-if="port.port.length>0"><a href="http://docker-test.cyberreveal.local:{{port.port[0][1]}}/">{{port.component}} ({{port.port[0][0]}} =&gt; {{port.port[0][1]}})</a>
                                 </li>
                             </ul>
                         </td>
