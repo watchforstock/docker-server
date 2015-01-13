@@ -1,28 +1,30 @@
 from flask import Flask, render_template, redirect, request
 import json
 
+from dock import DockerController
+
 app = Flask(__name__)
 
-stacks = [
+stacks = {
+    'test1':
     {
         'id': 'test1',
         'name': 'test 1',
         'versions': {
-            'db': '14',
-            'ds': '16',
-            'we': '122'
+            'db': 'ubuntu-12.04',
+            'web': 'ubuntu-14.04'
         }
     },
+    'test2':
     {
         'id': 'test2',
         'name': 'test 2',
         'versions': {
-            'db': '15',
-            'ds': '17',
-            'we': '128'
+            'db': 'ubuntu-14.04',
+            'web': 'ubuntu-12.04',
         }
     },
-]
+}
 running_stacks = [
     {
         'username': 'test1',
@@ -50,7 +52,7 @@ def index():
 
 @app.route('/stacks/')
 def get_stacks():
-    return json.dumps(stacks), 200, {'Content-Type': 'application/json'}
+    return json.dumps(stacks.values()), 200, {'Content-Type': 'application/json'}
 
 @app.route('/running/')
 def get_running_stacks():
@@ -64,6 +66,12 @@ def stack_details(stack_id):
 def create_stack():
     # request.get_json()
     print request.get_json()
+
+    data = request.get_json()
+
+    d = DockerController()
+    d.start_stack(data['username'], data['stackid'], stacks[data['stackid']])
+
     return "ok"
 
 @app.route('/stacks/<stack_id>/', methods=['DELETE'])
@@ -75,4 +83,4 @@ def populate_already_running():
 
 if __name__ == '__main__':
     populate_already_running()
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
