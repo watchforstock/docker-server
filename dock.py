@@ -31,7 +31,7 @@ class DockerController:
         ''' Get all the IDs of all running containers '''
         return dict([[x['Id'], 0] for x in self.c.containers(quiet=True)])
         
-    def get_links(self, spec
+    def get_links(self, spec, identifier, stackid):
         links = []
         
         if 'links' in spec:
@@ -51,7 +51,7 @@ class DockerController:
         self.check_image_exists(spec['image'], tag)
 
         ports = spec.get('ports') or []
-        links = self.get_links(spec)
+        links = self.get_links(spec, identifier, stackid)
         command = spec.get('command')
         name = self.adjust_name(name, identifier, stackid)
 
@@ -97,13 +97,15 @@ class DockerController:
             key = '%s-%s' % (stackid, identifier)
                   
             if key not in stacks:
+                stack_info = stack_config.get(stackid)
                 stacks[key] = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}}
             
             stacks[key]['machines'][name] = container_id
+            
+            container_ports = [[x['PrivatePort'], x['PublicPort']] for x in ports if 'PublicPort' in x]
+            stacks[key]['ports'].append({'component': name, 'port': container_ports})
                   
-            # TODO: Need to iterate through ports
-                  
-        return stack
+        return stacks
             
                   
     def order_machines(self, config):
@@ -126,7 +128,7 @@ class DockerController:
                     unsatisfied.append(machine)
             all_machines = unsatisfied
             
-            if len(all_machines)>0 && len(all_machines)==last_length:
+            if len(all_machines)>0 and len(all_machines)==last_length:
                 # We're iterating without doing anything
                 raise Exception("Circular or unresolved dependency")
         return to_build
@@ -157,12 +159,8 @@ class DockerController:
             stack['machines'][container_name] = container_id
         return stack
 
-    def stop_stack(self, identifier, stackid):
+    def stop_stack(self, identifier, stackid, stack_info):
         config = yaml.load(open('config.yaml'))
-
-        stack_info = {
-		  'id': 'test1'
-        }
 
         for name, config in config.iteritems():
             image_name = self.adjust_name(name, identifier, stack_info['id'])

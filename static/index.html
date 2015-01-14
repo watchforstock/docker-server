@@ -26,8 +26,8 @@
                 <div class="panel-body">
                     <form class="form-inline" ng-submit="createStack()">
                         <div class="form-group">
-                            <label class="sr-only" for="name">Username</label>
-                            <input type="text" class="form-control" id="name" placeholder="Username" ng-model="username">
+                            <label class="sr-only" for="name">Identifier</label>
+                            <input type="text" class="form-control" id="name" placeholder="Identifier" ng-model="username">
                         </div>
                         <div class="form-group">
                             <label class="sr-only" for="stack">Stack</label>
@@ -46,7 +46,7 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Username</th>
+                            <th>Identifier</th>
                             <th>Stack</th>
                             <th>Versions</th>
                             <th>Connections</th>
@@ -54,7 +54,7 @@
                         </tr>
                     </thead>
                     <tr ng-repeat="stack in running">
-                        <td>{{ stack.username }}</td>
+                        <td>{{ stack.identifier }}</td>
                         <td>{{ stack.stack.name }}</td>
                         <td>
                             <ul>
@@ -68,7 +68,7 @@
                             </ul>
                         </td>
                         <td>
-                            <a ng-click="deleteStack()" class="btn btn-danger">Stop</a>
+                            <a ng-click="deleteStack(stack.identifier, stack.stack.id)" class="btn btn-danger">Stop</a>
                         </td>
                     </tr>
                 </table>

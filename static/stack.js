@@ -35,7 +35,14 @@ angular.module('stackApp', ['restangular'])
             console.log("Failed");
         });
     };
-      
+     
+$scope.deleteStack = function(identifier, stackid) {
+	console.log(identifier);
+	console.log(stackid);
+	  Restangular.all('stacks').customDELETE(identifier + '/' + stackid + '/').then(function() {
+		$scope.refresh();
+	});
+}; 
     $scope.addTodo = function() {
       $scope.todos.push({text:$scope.todoText, done:false});
       $scope.todoText = '';

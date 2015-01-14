@@ -1,0 +1,24 @@
+ {
+    "timsk395":
+    {
+        "id": "timsk395",
+        "name": "TIMSK 395 permissioning in web ui",
+        "versions": {
+            "db": "9",
+            "ws": "117",
+            "es": "14",
+            "ds": "14",
+            "as": "25",
+            "asinit":"25"
+        }
+    },
+    "test2":
+    {
+        "id": "test2",
+        "name": "test 2",
+        "versions": {
+            "db": "ubuntu-14.04",
+            "web": "ubuntu-12.04"
+        }
+    }
+}
