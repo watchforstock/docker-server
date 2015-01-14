@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, request
 import json
+from glob import glob
 
 from dock import DockerController
 
@@ -9,7 +10,13 @@ running_stacks = {
 }
 
 def get_stack_info():
-    return json.loads(open('stacks.json').read())
+    ret = {}
+    for scope in get_scopes():
+        ret[scope] = json.loads(open('%s.json' % scope).read())
+    return ret
+
+def get_scopes():
+    return [x.split('.')[0] for x in glob('*.yaml')]
 
 @app.route('/')
 def index():
@@ -50,16 +57,20 @@ def create_stack():
     data = request.get_json()
 
     d = DockerController()
-    stack = d.start_stack(data['username'], data['stackid'], get_stack_info()[data['stackid']])
+    stack = d.start_stack(data['username'], data['stackid'], get_stack_info()[data['scope']][data['stackid']])
 
-    running_stacks[data['stackid'] + '-' + data['username']] = stack
+    running_stacks[data['scope'] + '-' + data['stackid'] + '-' + data['username']] = stack
 
     return "ok"
 
-@app.route('/stacks/<identifier>/<stack_id>/', methods=['DELETE'])
-def stop_stack(identifier, stack_id):
+@app.route('/scopes/')
+def get_scopes_detail():
+    return json.dumps(get_scopes())
+
+@app.route('/stacks/<scope>/<identifier>/<stack_id>/', methods=['DELETE'])
+def stop_stack(scope, identifier, stack_id):
     d = DockerController()
-    d.stop_stack(identifier, stack_id, get_stack_info()[stack_id])
+    d.stop_stack(scope, identifier, stack_id, get_stack_info()[stack_id])
     return "ok"
 
 def populate_already_running():

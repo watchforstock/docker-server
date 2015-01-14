@@ -9,9 +9,9 @@ class DockerController:
     def __init__(self):
         self.c = Client(base_url='unix://var/run/docker.sock', version='1.15')
 
-    def adjust_name(self, name, identifier, stackid):
+    def adjust_name(self, scope, name, identifier, stackid):
         ''' generate a container name '''
-        return '%s-%s-%s' % (identifier, stackid, name)
+        return '%s-%s-%s-%s' % (scope, identifier, stackid, name)
 
     def check_image_exists(self, image, tag):
         images = self.c.images()
@@ -31,7 +31,7 @@ class DockerController:
         ''' Get all the IDs of all running containers '''
         return dict([[x['Id'], 0] for x in self.c.containers(quiet=True)])
         
-    def get_links(self, spec, identifier, stackid):
+    def get_links(self, scope, spec, identifier, stackid):
         links = []
         
         if 'links' in spec:
@@ -41,19 +41,19 @@ class DockerController:
                     all_links.append(link.split(':'))
                 else:
                     all_links.append([link, link])
-            links = [[self.adjust_name(service, identifier, stackid),alias] for service,alias in all_links]
+            links = [[self.adjust_name(scope, service, identifier, stackid),alias] for service,alias in all_links]
         return links
 
-    def start_container(self, name, spec, tag, identifier, stackid):
+    def start_container(self, scope, name, spec, tag, identifier, stackid):
         image = spec['image'] + ':' + tag
 
         # Pull the image if required
         self.check_image_exists(spec['image'], tag)
 
         ports = spec.get('ports') or []
-        links = self.get_links(spec, identifier, stackid)
+        links = self.get_links(scope, spec, identifier, stackid)
         command = spec.get('command')
-        name = self.adjust_name(name, identifier, stackid)
+        name = self.adjust_name(scope, name, identifier, stackid)
 
         # Remove any existing container with the same name
         try:
@@ -92,13 +92,13 @@ class DockerController:
             ports = container['Ports']
                   
             # Turn name into constituent parts
-            identifier, stackid, name = names[0][1:].split('-')      
+            scope, identifier, stackid, name = names[0][1:].split('-')      
                 
-            key = '%s-%s' % (stackid, identifier)
+            key = '%s-%s-%s' % (scope, stackid, identifier)
                   
             if key not in stacks:
                 stack_info = stack_config.get(stackid)
-                stacks[key] = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}}
+                stacks[key] = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}, 'scope': scope}
             
             stacks[key]['machines'][name] = container_id
             
@@ -133,10 +133,10 @@ class DockerController:
                 raise Exception("Circular or unresolved dependency")
         return to_build
     
-    def start_stack(self, identifier, stackid, stack_info):
-        config = yaml.load(open('config.yaml'))
+    def start_stack(self, scope, identifier, stackid, stack_info):
+        config = yaml.load(open(scope + '.yaml'))
 
-        stack = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}}
+        stack = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}, 'scope': scope}
 
         to_build = self.order_machines(config)
 
@@ -146,7 +146,8 @@ class DockerController:
             container_config = config[container_name] 
             container_tag = stack_info['versions'].get(container_name)
             
-            container_id, image, ports = self.start_container(container_name, 
+            container_id, image, ports = self.start_container(scope,
+                                                              container_name, 
                                                               container_config, 
                                                               container_tag, 
                                                               identifier, 
@@ -159,8 +160,8 @@ class DockerController:
             stack['machines'][container_name] = container_id
         return stack
 
-    def stop_stack(self, identifier, stackid, stack_info):
-        config = yaml.load(open('config.yaml'))
+    def stop_stack(self, scope, identifier, stackid, stack_info):
+        config = yaml.load(open(scope + '.yaml'))
 
         for name, config in config.iteritems():
             image_name = self.adjust_name(name, identifier, stack_info['id'])

@@ -17,7 +17,7 @@
 </head>
 
 <body ng-controller="StackController">
-<div growl></div>
+    <div growl></div>
     <div class="container">
 
         <div class="starter-template">
@@ -27,14 +27,21 @@
                 <div class="panel-heading">Start new stack</div>
                 <div class="panel-body">
                     <form class="form-inline" ng-submit="createStack()">
+
                         <div class="form-group">
                             <label class="sr-only" for="name">Identifier</label>
-                            <input type="text" class="form-control" id="name" placeholder="Identifier" ng-model="username">
+                            <input type="text" class="form-control" id="name" placeholder="Identifier" ng-model="identifier">
+                        </div>
+                        <div class="form-group">
+                            <label class="sr-only" for="stack">Stack</label>
+                            <select class="form-control" id="scope" ng-model="scope">
+                                <option ng-repeat="scope in scopes" value="{{ stack.id }}">Scope: {{ scope }}</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label class="sr-only" for="stack">Stack</label>
                             <select class="form-control" id="stack" ng-model="newstack">
-                                <option ng-repeat="stack in stacks" value="{{ stack.id }}">Stack: {{ stack.name }}</option>
+                                <option ng-repeat="stack in stacks[scope]" value="{{ stack.id }}">Stack: {{ stack.name }}</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-default">Create</button>
@@ -43,7 +50,8 @@
             </div>
 
             <div class="panel panel-default">
-                <div class="panel-heading">Running stacks <a ng-click="refresh()">refresh</a></div>
+                <div class="panel-heading">Running stacks <a ng-click="refresh()">refresh</a>
+                </div>
 
                 <table class="table table-striped">
                     <thead>
