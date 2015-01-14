@@ -59,13 +59,13 @@ def create_stack():
 @app.route('/stacks/<identifier>/<stack_id>/', methods=['DELETE'])
 def stop_stack(identifier, stack_id):
     d = DockerController()
-    d.stop_stack(identifier, stack_id, get_stack_info[stack_id])
+    d.stop_stack(identifier, stack_id, get_stack_info()[stack_id])
     return "ok"
 
 def populate_already_running():
     global running_stacks
     d = DockerController()
-    running_stacks = d.get_running_containers(get_stack_info)
+    running_stacks = d.get_running_containers(get_stack_info())
 
 if __name__ == '__main__':
     populate_already_running()
