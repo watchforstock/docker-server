@@ -13,6 +13,7 @@ def get_stack_info():
     ret = {}
     for scope in get_scopes():
         ret[scope] = json.loads(open('%s.json' % scope).read())
+#    print ret
     return ret
 
 def get_scopes():
@@ -24,7 +25,18 @@ def index():
 
 @app.route('/stacks/')
 def get_stacks():
-    return json.dumps(get_stack_info().values()), 200, {'Content-Type': 'application/json'}
+    stacks = []
+ #   print json.dumps(get_stack_info(), indent=4)
+    for scope, data in get_stack_info().iteritems():
+  #      print json.dumps(data, indent=4)
+        for k,v in data.iteritems():
+    #        print 'value'
+   #         print json.dumps(v,indent=4)
+            v['scope'] = scope
+            stacks.append(v)
+    #stacks = [data.values() for scope, data in get_stack_info().iteritems()]
+    #print stacks
+    return json.dumps(stacks), 200, {'Content-Type': 'application/json'}
 
 @app.route('/running/')
 def get_running_stacks():
@@ -57,9 +69,9 @@ def create_stack():
     data = request.get_json()
 
     d = DockerController()
-    stack = d.start_stack(data['username'], data['stackid'], get_stack_info()[data['scope']][data['stackid']])
+    stack = d.start_stack(data['scope'], data['identifier'], data['stackid'], get_stack_info()[data['scope']][data['stackid']])
 
-    running_stacks[data['scope'] + '-' + data['stackid'] + '-' + data['username']] = stack
+    running_stacks[data['scope'] + '-' + data['stackid'] + '-' + data['identifier']] = stack
 
     return "ok"
 
@@ -70,7 +82,7 @@ def get_scopes_detail():
 @app.route('/stacks/<scope>/<identifier>/<stack_id>/', methods=['DELETE'])
 def stop_stack(scope, identifier, stack_id):
     d = DockerController()
-    d.stop_stack(scope, identifier, stack_id, get_stack_info()[stack_id])
+    d.stop_stack(scope, identifier, stack_id, get_stack_info().get(scope)[stack_id])
     return "ok"
 
 def populate_already_running():
@@ -80,4 +92,4 @@ def populate_already_running():
 
 if __name__ == '__main__':
     populate_already_running()
-    app.run(debug=True, host="0.0.0.0")
+    app.run(debug=True, host="0.0.0.0", port=80)

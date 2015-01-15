@@ -19,6 +19,23 @@ angular.module('stackApp', ['restangular', 'angular-growl'])
 
             $scope.refresh();
 
+	    $scope.getStacks = function() {
+console.log("spotted change");
+		var ret = [];
+console.log($scope.stacks);
+console.log($scope.scope);
+                if ($scope.stacks && $scope.scope) {
+  		for (var i=0; i<$scope.stacks.length; ++i) {
+			if ($scope.stacks[i].scope == $scope.scope) {
+				ret.push($scope.stacks[i]);
+                        }		
+		}
+		}
+console.log(ret);
+		$scope.availableStacks = ret;
+	    };
+
+$scope.$watch('scope', $scope.getStacks);
 
             $scope.createStack = function () {
 
@@ -38,13 +55,13 @@ angular.module('stackApp', ['restangular', 'angular-growl'])
                 });
             };
 
-            $scope.deleteStack = function (identifier, stackid) {
+            $scope.deleteStack = function (scope, identifier, stackid) {
                 growl.info("Deleting stack, please wait");
-                Restangular.all('stacks').customDELETE(identifier + '/' + stackid + '/').then(function () {
+                Restangular.all('stacks').customDELETE(scope + '/' + identifier + '/' + stackid + '/').then(function () {
                     growl.success("Deleted stack");
                     $scope.refresh();
                 }, function () {
-                    growl.success("Failed to delete stack");
+                    growl.error("Failed to delete stack");
                 });
             };
 

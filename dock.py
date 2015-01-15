@@ -97,7 +97,7 @@ class DockerController:
             key = '%s-%s-%s' % (scope, stackid, identifier)
                   
             if key not in stacks:
-                stack_info = stack_config.get(stackid)
+                stack_info = stack_config.get(scope).get(stackid)
                 stacks[key] = {'identifier': identifier, 'stack': stack_info, 'ports': [], 'machines':{}, 'scope': scope}
             
             stacks[key]['machines'][name] = container_id
@@ -164,7 +164,7 @@ class DockerController:
         config = yaml.load(open(scope + '.yaml'))
 
         for name, config in config.iteritems():
-            image_name = self.adjust_name(name, identifier, stack_info['id'])
+            image_name = self.adjust_name(scope, name, identifier, stack_info['id'])
             try:
                 self.c.stop(image_name)
                 self.c.remove_container(image_name)
