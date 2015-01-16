@@ -71,8 +71,8 @@
 			<td>{{ stack.scope }}</td>
                         <td>{{ stack.stack.name }}</td>
                         <td>
-                            <ul>
-                                <li ng-repeat="(key, value) in stack.stack.versions">{{key}}:{{value}}</li>
+                            <ul class="list-group">
+                                <li class="list-group-item" ng-repeat="(key, value) in stack.stack.versions">{{key}} <span class="badge">{{value}}</span></li>
                             </ul>
                         </td>
                         <td>
