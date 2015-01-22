@@ -2,6 +2,8 @@ from docker import Client
 import yaml
 import json
 import subprocess
+import socket 
+import time
 from collections import defaultdict
 
 class DockerController:
@@ -44,6 +46,18 @@ class DockerController:
             links = [[self.adjust_name(scope, service, identifier, stackid),alias] for service,alias in all_links]
         return links
 
+    def check_port_open(self, port):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', port))
+        return result==0
+
+    def wait_for_port_open(self, port, timeout):
+        for i in range(timeout):
+            if self.check_port_open(port):
+                return True
+            time.sleep(1)
+        return False
+
     def start_container(self, scope, name, spec, tag, identifier, stackid):
         image = spec['image'] + ':' + tag
 
@@ -78,6 +92,9 @@ class DockerController:
         for port in ports:
             ext_port = self.c.port(container.get('Id'), port)
             port_mappings[port] = ext_port
+            self.wait_for_port_open(int(ext_port[0]['HostPort']), 30)
+
+        time.sleep(20)
 
         return container.get('Id'), image, port_mappings
 
