@@ -65,6 +65,7 @@ class DockerController:
         self.check_image_exists(spec['image'], tag)
 
         ports = spec.get('ports') or []
+        post_delay = spec.get('delay')
         links = self.get_links(scope, spec, identifier, stackid)
         command = spec.get('command')
         name = self.adjust_name(scope, name, identifier, stackid)
@@ -94,7 +95,8 @@ class DockerController:
             port_mappings[port] = ext_port
             self.wait_for_port_open(int(ext_port[0]['HostPort']), 30)
 
-        time.sleep(20)
+        if post_delay is not None:
+            time.sleep(int(post_delay))
 
         return container.get('Id'), image, port_mappings
 
