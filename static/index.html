@@ -12,12 +12,34 @@
     <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/restangular/1.3.1/restangular.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/angular-growl.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
     <script src="/static/angular-growl.js"></script>
     <script src="/static/stack.js"></script>
 </head>
 
 <body ng-controller="StackController">
     <div growl></div>
+
+<div class="modal fade bs-example-modal-lg" id="logmodal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="max-height:90%">
+<div class="modal-body" style="overflow-y: auto; max-height:80%">     <table>
+	<tr ng-repeat="log in logdata track by $index">
+		<td>{{log}}</td>
+	</tr>
+</table>
+
+
+</div>
+ <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
     <div class="container">
 
         <div class="starter-template">
@@ -72,7 +94,11 @@
                         <td>{{ stack.stack.name }}</td>
                         <td>
                             <ul class="list-group">
-                                <li class="list-group-item" ng-repeat="(key, value) in stack.stack.versions">{{key}} <span class="badge">{{value}}</span></li>
+                                <li class="list-group-item" ng-repeat="(key, value) in stack.stack.versions">
+
+                            <a ng-click="stackLog(stack.scope, stack.identifier, stack.stack.id, key)">
+{{key}}</a> 
+<span class="badge">{{value}}</span></li>
                             </ul>
                         </td>
                         <td>

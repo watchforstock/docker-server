@@ -79,6 +79,11 @@ def create_stack():
 def get_scopes_detail():
     return json.dumps(get_scopes())
 
+@app.route('/stacks/<scope>/<identifier>/<stack_id>/<name>/logs/', methods=['GET'])
+def log(scope, identifier, stack_id, name):
+    d = DockerController()
+    return json.dumps(d.get_logs(scope, name, identifier, stack_id), 200, {'Content-Type': 'application/json'})
+
 @app.route('/stacks/<scope>/<identifier>/<stack_id>/', methods=['DELETE'])
 def stop_stack(scope, identifier, stack_id):
     d = DockerController()

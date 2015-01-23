@@ -4,7 +4,7 @@ import json
 import subprocess
 import socket 
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 
 class DockerController:
     
@@ -14,6 +14,10 @@ class DockerController:
     def adjust_name(self, scope, name, identifier, stackid):
         ''' generate a container name '''
         return '%s-%s-%s-%s' % (scope, identifier, stackid, name)
+
+    def get_logs(self, scope, name, identifier, stackid):
+        name = self.adjust_name(scope, name, identifier, stackid)
+        return [self.c.logs(container=name, stdout=True, stderr=True, timestamps=True, tail=100).splitlines()]
 
     def check_image_exists(self, image, tag):
         images = self.c.images()

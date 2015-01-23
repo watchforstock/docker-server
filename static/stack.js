@@ -37,6 +37,16 @@ console.log(ret);
 
 $scope.$watch('scope', $scope.getStacks);
 
+$scope.logdata = [];
+
+$scope.stackLog = function(scope, name, id, stack_id) {
+	Restangular.all('stacks').customGET(scope + '/' + name + '/' + id + '/' + stack_id + '/logs/').then(function(data) {
+console.log(data);
+$scope.logdata = data[0];
+$('#logmodal').modal();
+});
+}
+
             $scope.createStack = function () {
 
                 var data = {
